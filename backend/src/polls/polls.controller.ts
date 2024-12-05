@@ -19,7 +19,7 @@ export class PollsController {
 
   @Patch('join')
   async rejoin() {
-    return this.pollsService.rejoin();
+    // return this.pollsService.rejoin();
   }
 
   @Delete('join')

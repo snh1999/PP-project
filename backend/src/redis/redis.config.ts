@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisModule } from './redis.module';
 
-export const redisModule = RedisModule.registerAsync({
+export const ConfigRedisModule = RedisModule.registerAsync({
   imports: [ConfigModule],
   useFactory: async (configService: ConfigService) => {
     const logger = new Logger('RedisModule');
