@@ -3,29 +3,37 @@ import { CreatePollDto, JoinPollDto } from '@/polls/polls.dto';
 import { customAlphabet, nanoid } from 'nanoid';
 import {PollsRepository} from "@/polls/polls.repository";
 import {TRejoinPollData} from "@/polls/polls.types";
+import {JwtService} from "@nestjs/jwt";
 
 @Injectable()
 export class PollsService {
   private readonly logger = new Logger(PollsService.name);
-  constructor(private readonly pollsRepository: PollsRepository) {
+  constructor(private readonly pollsRepository: PollsRepository, private readonly jwtService: JwtService) {
   }
 
   async create(createPollDto: CreatePollDto) {
     const pollID = this.getPollID();
     const userID = nanoid();
 
-    const createdPoll = await this.pollsRepository.createPoll({
+    const poll = await this.pollsRepository.createPoll({
       ...createPollDto,
       id: pollID,
       adminID: userID,
     });
 
-
-    // TODO - create an accessToken based off of pollID and userID
+    const signedString = this.jwtService.sign(
+        {
+          pollID: poll.id,
+          name: createPollDto.name,
+        },
+        {
+          subject: userID,
+        },
+    );
 
     return {
-      poll: createdPoll,
-      // accessToken
+      poll: poll,
+      accessToken: signedString,
     };
   }
 

@@ -8,7 +8,6 @@ export class PollsController {
 
   @Post()
   async create(@Body() createPollDto: CreatePollDto): Promise<any> {
-    console.log('called');
     return this.pollsService.create(createPollDto);
   }
 

@@ -17,6 +17,7 @@ export class PollsRepository {
     this.ttl = configService.get('POLL_DURATION') ?? '';
   }
 
+
   async createPoll(createPollData: TCreatePoll): Promise<Poll> {
     const poll = {
       ...createPollData,
