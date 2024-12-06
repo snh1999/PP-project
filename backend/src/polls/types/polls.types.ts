@@ -17,6 +17,12 @@ export type TParticipant = {
   name: string;
 };
 
+export type TAddParticipant = {
+  pollID: string;
+  userID: string;
+  name: string;
+};
+
 
 export interface IParticipants {
   [participantID: string]: string;
@@ -28,8 +34,28 @@ export type Poll = {
   votesPerVoter: number;
   participants: IParticipants;
   adminID: string;
-  // nominations: Nominations;
+  pollOptions: PollOptions;
   // rankings: Rankings;
   // results: Results;
-  // hasStarted: boolean;
+  hasStarted: boolean;
 }
+
+
+export type PollOption = {
+  userID: string;
+  text: string;
+}
+
+export type PollOptions = {
+  [optionID: string]: PollOption;
+}
+
+export type PollOptionInfo = {
+  pollID: string;
+  optionID: string;
+  pollOption: PollOption;
+};
+
+export type AddPollOption =  PollOption & {
+  pollID: string;
+};

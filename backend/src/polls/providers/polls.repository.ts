@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Redis} from 'ioredis';
 import { IORedisKey } from '@/redis/redis.constants';
-import {TParticipant, Poll, TCreatePoll} from "@/polls/types/polls.types";
+import {TParticipant, Poll, TCreatePoll, PollOptionInfo} from "@/polls/types/polls.types";
 
 @Injectable()
 export class PollsRepository {
@@ -22,9 +22,11 @@ export class PollsRepository {
     const poll = {
       ...createPollData,
       participants: {},
+      pollOptions: {},
+      hasStarted: false,
     };
 
-    const key = poll.id;
+    const key = `polls:${poll.id}`;
 
     try {
       await this.redisClient
@@ -55,8 +57,6 @@ export class PollsRepository {
           '.',
       ) as string;
 
-      this.logger.verbose(currentPoll);
-
       // if (currentPoll?.hasStarted) {
       //   throw new BadRequestException('The poll has already started');
       // }
@@ -73,9 +73,7 @@ export class PollsRepository {
     userID,
     name,
   }: TParticipant): Promise<Poll> {
-    this.logger.log(
-      `Attempting to add a participant with userID/name: ${userID}/${name} to pollID: ${pollID}`,
-    );
+    this.logger.log(`Attempting to add participant ${userID}(${name}) to ${pollID}`);
 
     const key = `polls:${pollID}`;
     const participantPath = `.participants.${userID}`;
@@ -88,20 +86,68 @@ export class PollsRepository {
         JSON.stringify(name),
       );
 
-      const pollJSON = await this.redisClient.call(
-        'JSON.GET',
-        key,
-        '.',
-      ) as string;
-
-      const poll = JSON.parse(pollJSON) as Poll;
-
-      this.logger.debug(`Total participants for pollID: ${pollID}:`, poll.participants);
-
-      return poll;
+      return this.getPoll(pollID);
     } catch (e) {
       this.logger.error(`Failed to add a participant: ${userID}(${name}) to ${pollID}`,);
       throw new InternalServerErrorException("Something went wrong creating poll");
+    }
+  }
+
+  async removeParticipant(pollID: string, userID: string): Promise<Poll> {
+    this.logger.log(`removing user ${userID} from poll: ${pollID}`);
+
+    const key = `polls:${pollID}`;
+    const participantPath = `.participants.${userID}`;
+
+    try {
+      await this.redisClient.call('JSON.DEL', key, participantPath);
+
+      return this.getPoll(pollID);
+    } catch (e) {
+      this.logger.error(`Failed to remove ${userID} from poll: ${pollID}`, e);
+      throw new InternalServerErrorException('Failed to remove participant');
+    }
+  }
+
+  async addOption({
+                        pollID,
+                        optionID,
+                        pollOption,
+                      }: PollOptionInfo): Promise<Poll> {
+    this.logger.log(`Attempting to add a option: ${pollOption.text} to poll: ${pollID}`);
+    // TODO reject same word
+
+    const key = `polls:${pollID}`;
+    const optionPath = `.options.${optionID}`;
+
+    try {
+      await this.redisClient.call(
+          'JSON.SET',
+          key,
+          optionPath,
+          JSON.stringify(pollOption),
+      );
+
+      return this.getPoll(pollID);
+    } catch (e) {
+      this.logger.error(`Failed to add option: ${optionID}/${pollOption.text} to poll: ${pollID}`, e);
+      throw new InternalServerErrorException(`Failed to add option: ${optionID}/${pollOption.text} to poll: ${pollID}`);
+    }
+  }
+
+  async removeOption(pollID: string, optionID: string): Promise<Poll> {
+    this.logger.log(`removing option: ${optionID} from poll: ${pollID}`,);
+
+    const key = `polls:${pollID}`;
+    const optionPath = `.options.${optionID}`;
+
+    try {
+      await this.redisClient.call('JSON.DEL', key, optionPath);
+
+      return this.getPoll(pollID);
+    } catch (e) {
+      this.logger.error(`Failed to remove option: ${optionID} from poll: ${pollID}`, e,);
+      throw new InternalServerErrorException(`Failed to remove option: ${optionID} from poll: ${pollID}`);
     }
   }
 }

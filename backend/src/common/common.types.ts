@@ -1,7 +1,7 @@
 import  {Request} from "express";
 import {Socket} from "socket.io";
 
-type AuthPayload = {
+export type AuthPayload = {
     userID: string;
     pollID: string;
     name: string;

@@ -1,7 +1,7 @@
 import {Body, Controller, Delete, Patch, Post, Req, UseGuards} from '@nestjs/common';
 import { PollsService } from '@/polls/providers/polls.service';
 import { CreatePollDto, JoinPollDto } from '@/polls/types/polls.dto';
-import {AuthGuard} from "@/common/auth.guard";
+import {AuthGuard} from "@/common/guards/auth-guard";
 import {RequestWithAuth} from "@/common/common.types";
 
 @Controller('polls')

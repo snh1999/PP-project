@@ -1,8 +1,8 @@
-import {Injectable, Logger} from '@nestjs/common';
+import { Injectable, Logger} from '@nestjs/common';
 import { CreatePollDto, JoinPollDto } from '@/polls/types/polls.dto';
 import { customAlphabet, nanoid } from 'nanoid';
 import {PollsRepository} from "@/polls/providers/polls.repository";
-import {TRejoinPollData} from "@/polls/types/polls.types";
+import {AddPollOption, Poll, TAddParticipant, TRejoinPollData} from "@/polls/types/polls.types";
 import {JwtService} from "@nestjs/jwt";
 
 @Injectable()
@@ -55,14 +55,53 @@ export class PollsService {
   async rejoin(joinPollData: TRejoinPollData) {
     this.logger.debug(`${joinPollData.userID} rejoined poll: ${joinPollData.pollID}`);
 
-    const joinedPoll = await this.pollsRepository.addParticipant(joinPollData);
-joinedPoll;
-    return joinedPoll;
+    return this.pollsRepository.addParticipant(joinPollData);
   }
 
   async leave(): Promise<void> {}
 
+  async getPoll(id: string): Promise<Poll> {
+    return this.pollsRepository.getPoll(id);
+  }
+
   private getPollID(length: number= 6) {
     return customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', length)(length);
+  }
+
+  async addParticipant(addParticipant: TAddParticipant): Promise<Poll> {
+    return this.pollsRepository.addParticipant(addParticipant);
+  }
+
+  async removeParticipant(
+      pollID: string,
+      userID: string,
+  ): Promise<Poll | void> {
+    const poll = await this.pollsRepository.getPoll(pollID);
+
+    if (!poll.hasStarted) {
+      return this.pollsRepository.removeParticipant(
+          pollID,
+          userID,
+      );
+    }
+  }
+
+  async addOption({
+                        pollID,
+                        userID,
+                        text,
+                      }: AddPollOption): Promise<Poll> {
+    return this.pollsRepository.addOption({
+      pollID,
+      optionID: nanoid(8),
+      pollOption: {
+        userID,
+        text,
+      },
+    });
+  }
+
+  async removeOption(pollID: string, nominationID: string): Promise<Poll> {
+    return this.pollsRepository.removeOption(pollID, nominationID);
   }
 }
