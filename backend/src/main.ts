@@ -7,7 +7,6 @@ import { SocketIOAdapter } from '@/common/middlewares/socketio.adapter';
 async function bootstrap() {
   const logger = new Logger('Application starting');
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   const configService = app.get(ConfigService);
   const port = parseInt(configService.get('PORT') ?? '3000');
@@ -15,10 +14,12 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      `http://localhost:8080/${originPort}`,
+      `http://localhost:${originPort}`,
       /^http:\/\/192\.168\.1\.([1-9]|[1-9]\d):8080$/,
     ],
   });
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
   app.useWebSocketAdapter(new SocketIOAdapter(app, configService));
   await app.listen(port);
 
