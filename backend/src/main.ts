@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {SocketIOAdapter} from "@/common/middlewares/socketio.adapter";
 
 async function bootstrap() {
   const logger = new Logger('Application starting');
@@ -18,6 +19,7 @@ async function bootstrap() {
       /^http:\/\/192\.168\.1\.([1-9]|[1-9]\d):8080$/,
     ],
   });
+  app.useWebSocketAdapter(new SocketIOAdapter(app, configService));
   await app.listen(port);
 
   logger.log(`Server running on port ${port}`);
