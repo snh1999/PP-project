@@ -1,22 +1,26 @@
-import {BadRequestException, Injectable, Logger} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreatePollDto, JoinPollDto } from '@/polls/types/polls.dto';
 import { customAlphabet, nanoid } from 'nanoid';
-import {PollsRepository} from "@/polls/providers/polls.repository";
+import { PollsRepository } from '@/polls/providers/polls.repository';
 import {
   ParticipantRankings,
   AddPollOption,
   Poll,
   TAddParticipant,
   TRejoinPollData,
-  Rankings, PollOptions, Results
-} from "@/polls/types/polls.types";
-import {JwtService} from "@nestjs/jwt";
+  Rankings,
+  PollOptions,
+  Results,
+} from '@/polls/types/polls.types';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class PollsService {
   private readonly logger = new Logger(PollsService.name);
-  constructor(private readonly pollsRepository: PollsRepository, private readonly jwtService: JwtService) {
-  }
+  constructor(
+    private readonly pollsRepository: PollsRepository,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async create(createPollDto: CreatePollDto) {
     const pollID = this.getPollID();
@@ -29,13 +33,13 @@ export class PollsService {
     });
 
     const signedString = this.jwtService.sign(
-        {
-          pollID: poll.id,
-          name: createPollDto.name,
-        },
-        {
-          subject: userID,
-        },
+      {
+        pollID: poll.id,
+        name: createPollDto.name,
+      },
+      {
+        subject: userID,
+      },
     );
 
     return {
@@ -60,7 +64,9 @@ export class PollsService {
   }
 
   async rejoin(joinPollData: TRejoinPollData) {
-    this.logger.debug(`${joinPollData.userID} rejoined poll: ${joinPollData.pollID}`);
+    this.logger.debug(
+      `${joinPollData.userID} rejoined poll: ${joinPollData.pollID}`,
+    );
 
     return this.pollsRepository.addParticipant(joinPollData);
   }
@@ -71,8 +77,11 @@ export class PollsService {
     return this.pollsRepository.getPoll(id);
   }
 
-  private getPollID(length: number= 6) {
-    return customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', length)(length);
+  private getPollID(length: number = 6) {
+    return customAlphabet(
+      '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      length,
+    )(length);
   }
 
   async addParticipant(addParticipant: TAddParticipant): Promise<Poll> {
@@ -80,24 +89,17 @@ export class PollsService {
   }
 
   async removeParticipant(
-      pollID: string,
-      userID: string,
+    pollID: string,
+    userID: string,
   ): Promise<Poll | void> {
     const poll = await this.pollsRepository.getPoll(pollID);
 
     if (!poll.hasStarted) {
-      return this.pollsRepository.removeParticipant(
-          pollID,
-          userID,
-      );
+      return this.pollsRepository.removeParticipant(pollID, userID);
     }
   }
 
-  async addOption({
-                        pollID,
-                        userID,
-                        text,
-                      }: AddPollOption): Promise<Poll> {
+  async addOption({ pollID, userID, text }: AddPollOption): Promise<Poll> {
     return this.pollsRepository.addOption({
       pollID,
       optionID: nanoid(8),
@@ -120,7 +122,9 @@ export class PollsService {
     const poll = await this.pollsRepository.getPoll(rankingsData.pollID);
 
     if (!poll) {
-      throw new BadRequestException('Participants cannot rank until the poll has started.',);
+      throw new BadRequestException(
+        'Participants cannot rank until the poll has started.',
+      );
     }
 
     return this.pollsRepository.addParticipantRankings(rankingsData);
@@ -130,43 +134,43 @@ export class PollsService {
     const poll = await this.pollsRepository.getPoll(pollID);
 
     const results = this.getResults(
-        poll.rankings,
-        poll.pollOptions,
-        poll.votesPerVoter,
+      poll.rankings,
+      poll.pollOptions,
+      poll.votesPerVoter,
     );
 
     return this.pollsRepository.addResults(pollID, results);
   }
 
-    getResults (
-        rankings: Rankings,
-        pollOptions: PollOptions,
-        votesPerVoter: number,
-    ): Results {
+  getResults(
+    rankings: Rankings,
+    pollOptions: PollOptions,
+    votesPerVoter: number,
+  ): Results {
     const scores: { [optionID: string]: number } = {};
 
     Object.values(rankings).forEach((userRankings) => {
-    userRankings.forEach((optionID, n) => {
-    const voteValue = Math.pow(
-        // TODO- change this formula
-        (votesPerVoter - 0.5 * n) / votesPerVoter,
-        n + 1,
-    );
+      userRankings.forEach((optionID, n) => {
+        const voteValue = Math.pow(
+          // TODO- change this formula
+          (votesPerVoter - 0.5 * n) / votesPerVoter,
+          n + 1,
+        );
 
-    scores[optionID] = (scores[optionID] ?? 0) + voteValue;
-  });
-  });
+        scores[optionID] = (scores[optionID] ?? 0) + voteValue;
+      });
+    });
 
-  const results = Object.entries(scores).map(([optionID, score]) => ({
-    optionID,
-    optionText: pollOptions[optionID].text,
-    score,
-  }));
+    const results = Object.entries(scores).map(([optionID, score]) => ({
+      optionID,
+      optionText: pollOptions[optionID].text,
+      score,
+    }));
 
-  results.sort((res1, res2) => res2.score - res1.score);
+    results.sort((res1, res2) => res2.score - res1.score);
 
-  return results;
-  };
+    return results;
+  }
 
   async deletePoll(pollID: string): Promise<void> {
     await this.pollsRepository.deletePoll(pollID);

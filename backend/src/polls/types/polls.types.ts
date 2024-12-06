@@ -23,7 +23,6 @@ export type TAddParticipant = {
   name: string;
 };
 
-
 export interface IParticipants {
   [participantID: string]: string;
 }
@@ -38,18 +37,17 @@ export type Poll = {
   rankings: Rankings;
   results: Results;
   hasStarted: boolean;
-}
+};
 
 export type Results = {
-  optionID: string,
-  optionText: string,
-  score: number,
+  optionID: string;
+  optionText: string;
+  score: number;
 }[];
-
 
 export type Rankings = {
   [userID: string]: string[];
-}
+};
 
 export type ParticipantRankings = {
   pollID: string;
@@ -57,15 +55,14 @@ export type ParticipantRankings = {
   rankings: string[];
 };
 
-
 export type PollOption = {
   userID: string;
   text: string;
-}
+};
 
 export type PollOptions = {
   [optionID: string]: PollOption;
-}
+};
 
 export type PollOptionInfo = {
   pollID: string;
@@ -73,6 +70,6 @@ export type PollOptionInfo = {
   pollOption: PollOption;
 };
 
-export type AddPollOption =  PollOption & {
+export type AddPollOption = PollOption & {
   pollID: string;
 };

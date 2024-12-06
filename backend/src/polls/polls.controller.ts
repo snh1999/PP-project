@@ -1,8 +1,16 @@
-import {Body, Controller, Delete, Patch, Post, Req, UseGuards} from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { PollsService } from '@/polls/providers/polls.service';
 import { CreatePollDto, JoinPollDto } from '@/polls/types/polls.dto';
-import {AuthGuard} from "@/common/guards/auth-guard";
-import {RequestWithAuth} from "@/common/common.types";
+import { AuthGuard } from '@/common/guards/auth-guard';
+import { RequestWithAuth } from '@/common/common.types';
 
 @Controller('polls')
 export class PollsController {
@@ -21,7 +29,7 @@ export class PollsController {
   @UseGuards(AuthGuard)
   @Patch('join')
   async rejoin(@Req() request: RequestWithAuth) {
-    return this.pollsService.rejoin({...request});
+    return this.pollsService.rejoin({ ...request });
   }
 
   @Delete('join')
