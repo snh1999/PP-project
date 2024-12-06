@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Redis} from 'ioredis';
 import { IORedisKey } from '@/redis/redis.constants';
-import {TParticipant, Poll, TCreatePoll} from "@/polls/polls.types";
+import {TParticipant, Poll, TCreatePoll} from "@/polls/types/polls.types";
 
 @Injectable()
 export class PollsRepository {

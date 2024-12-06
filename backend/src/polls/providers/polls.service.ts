@@ -1,8 +1,8 @@
 import {Injectable, Logger} from '@nestjs/common';
-import { CreatePollDto, JoinPollDto } from '@/polls/polls.dto';
+import { CreatePollDto, JoinPollDto } from '@/polls/types/polls.dto';
 import { customAlphabet, nanoid } from 'nanoid';
-import {PollsRepository} from "@/polls/polls.repository";
-import {TRejoinPollData} from "@/polls/polls.types";
+import {PollsRepository} from "@/polls/providers/polls.repository";
+import {TRejoinPollData} from "@/polls/types/polls.types";
 import {JwtService} from "@nestjs/jwt";
 
 @Injectable()
