@@ -126,4 +126,56 @@ export class PollsGateway
 
         this.io.to(client.pollID).emit('poll_updated', updatedPoll);
     }
+
+    @UseGuards(GatewayAdminGuard)
+    @SubscribeMessage('start_poll')
+    async startPoll(@ConnectedSocket() client: SocketWithAuth): Promise<void> {
+        this.logger.debug(`Attempting to start voting for poll: ${client.pollID}`);
+
+        const updatedPoll = await this.pollsService.startPoll(client.pollID);
+
+        this.io.to(client.pollID).emit('poll_updated', updatedPoll);
+    }
+
+    @SubscribeMessage('submit_rankings')
+    async submitRankings(
+        @ConnectedSocket() client: SocketWithAuth,
+        @MessageBody('rankings') rankings: string[],
+    ): Promise<void> {
+        this.logger.debug(
+            `Submitting votes for user: ${client.userID} belonging to pollID: "${client.pollID}"`,
+        );
+
+        const updatedPoll = await this.pollsService.submitRankings({
+            pollID: client.pollID,
+            userID: client.userID,
+            rankings,
+        });
+
+        // an enhancement might be to not send ranking data to clients,
+        // but merely a list of the participants who have voted since another
+        // participant getting this data could lead to cheating
+        // we may add this while working on the client
+        this.io.to(client.pollID).emit('poll_updated', updatedPoll);
+    }
+
+    @UseGuards(GatewayAdminGuard)
+    @SubscribeMessage('close_poll')
+    async closePoll(@ConnectedSocket() client: SocketWithAuth): Promise<void> {
+        this.logger.debug(`Closing poll: ${client.pollID}`);
+
+        const updatedPoll = await this.pollsService.computeResults(client.pollID);
+
+        this.io.to(client.pollID).emit('poll_updated', updatedPoll);
+    }
+
+    @UseGuards(GatewayAdminGuard)
+    @SubscribeMessage('delete_poll')
+    async deletePoll(@ConnectedSocket() client: SocketWithAuth): Promise<void> {
+        this.logger.debug(`Cancelling poll with id: "${client.pollID}"`);
+
+        await this.pollsService.deletePoll(client.pollID);
+
+        this.io.to(client.pollID).emit('poll_cancelled');
+    }
 }

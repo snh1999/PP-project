@@ -35,10 +35,27 @@ export type Poll = {
   participants: IParticipants;
   adminID: string;
   pollOptions: PollOptions;
-  // rankings: Rankings;
-  // results: Results;
+  rankings: Rankings;
+  results: Results;
   hasStarted: boolean;
 }
+
+export type Results = {
+  optionID: string,
+  optionText: string,
+  score: number,
+}[];
+
+
+export type Rankings = {
+  [userID: string]: string[];
+}
+
+export type ParticipantRankings = {
+  pollID: string;
+  userID: string;
+  rankings: string[];
+};
 
 
 export type PollOption = {

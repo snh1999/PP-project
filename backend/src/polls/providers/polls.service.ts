@@ -1,8 +1,15 @@
-import { Injectable, Logger} from '@nestjs/common';
+import {BadRequestException, Injectable, Logger} from '@nestjs/common';
 import { CreatePollDto, JoinPollDto } from '@/polls/types/polls.dto';
 import { customAlphabet, nanoid } from 'nanoid';
 import {PollsRepository} from "@/polls/providers/polls.repository";
-import {AddPollOption, Poll, TAddParticipant, TRejoinPollData} from "@/polls/types/polls.types";
+import {
+  ParticipantRankings,
+  AddPollOption,
+  Poll,
+  TAddParticipant,
+  TRejoinPollData,
+  Rankings, PollOptions, Results
+} from "@/polls/types/polls.types";
 import {JwtService} from "@nestjs/jwt";
 
 @Injectable()
@@ -103,5 +110,65 @@ export class PollsService {
 
   async removeOption(pollID: string, nominationID: string): Promise<Poll> {
     return this.pollsRepository.removeOption(pollID, nominationID);
+  }
+
+  async startPoll(pollID: string): Promise<Poll> {
+    return this.pollsRepository.startPoll(pollID);
+  }
+
+  async submitRankings(rankingsData: ParticipantRankings): Promise<Poll> {
+    const poll = await this.pollsRepository.getPoll(rankingsData.pollID);
+
+    if (!poll) {
+      throw new BadRequestException('Participants cannot rank until the poll has started.',);
+    }
+
+    return this.pollsRepository.addParticipantRankings(rankingsData);
+  }
+
+  async computeResults(pollID: string): Promise<Poll> {
+    const poll = await this.pollsRepository.getPoll(pollID);
+
+    const results = this.getResults(
+        poll.rankings,
+        poll.pollOptions,
+        poll.votesPerVoter,
+    );
+
+    return this.pollsRepository.addResults(pollID, results);
+  }
+
+    getResults (
+        rankings: Rankings,
+        pollOptions: PollOptions,
+        votesPerVoter: number,
+    ): Results {
+    const scores: { [optionID: string]: number } = {};
+
+    Object.values(rankings).forEach((userRankings) => {
+    userRankings.forEach((optionID, n) => {
+    const voteValue = Math.pow(
+        // TODO- change this formula
+        (votesPerVoter - 0.5 * n) / votesPerVoter,
+        n + 1,
+    );
+
+    scores[optionID] = (scores[optionID] ?? 0) + voteValue;
+  });
+  });
+
+  const results = Object.entries(scores).map(([optionID, score]) => ({
+    optionID,
+    optionText: pollOptions[optionID].text,
+    score,
+  }));
+
+  results.sort((res1, res2) => res2.score - res1.score);
+
+  return results;
+  };
+
+  async deletePoll(pollID: string): Promise<void> {
+    await this.pollsRepository.deletePoll(pollID);
   }
 }
